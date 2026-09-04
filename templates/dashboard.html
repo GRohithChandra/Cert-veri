@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>🛠️ Admin Control Dashboard</h2>
+        <div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn">Register / Issue</a>
+            <a href="{{ url_for('view_records') }}" class="btn">View All Records</a>
+            <a href="{{ url_for('admin_logout') }}" class="btn" style="background:#ef4444;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if active_tab == 'overview' %}
+        <div class="grid">
+            <!-- 1. Register Student -->
+            <div class="card">
+                <h3>1. Register New Student</h3>
+                <form action="{{ url_for('register_student') }}" method="POST">
+                    <div class="form-group"><label>Student ID/Roll</label><input type="text" name="student_id" required></div>
+                    <div class="form-group"><label>Full Name</label><input type="text" name="name" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+                    <div class="form-group"><label>Temp Password</label><input type="password" name="password" required></div>
+                    <div class="form-group"><label>Department</label><input type="text" name="department" required></div>
+                    <div class="form-group"><label>Graduation Year</label><input type="text" name="grad_year" required></div>
+                    <div class="form-group"><label>CGPA</label><input type="text" name="cgpa" required></div>
+                    <button type="submit" class="btn btn-success">Register Student</button>
+                </form>
+            </div>
+
+            <!-- 2. Issue Certificate -->
+            <div class="card">
+                <h3>2. Issue & Hash Certificate</h3>
+                <form action="{{ url_for('issue_certificate') }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group"><label>Student ID/Roll</label><input type="text" name="student_id" required></div>
+                    <div class="form-group"><label>Full Name</label><input type="text" name="name" required></div>
+                    <div class="form-group"><label>Department</label><input type="text" name="department" required></div>
+                    <div class="form-group"><label>CGPA</label><input type="text" name="cgpa" required></div>
+                    <div class="form-group"><label>Passing Year</label><input type="text" name="passing_year" required></div>
+                    <div class="form-group"><label>Class Distinction</label><input type="text" name="distinction" placeholder="e.g. First Class with Distinction"></div>
+                    <div class="form-group"><label>Certificate PDF</label><input type="file" name="cert_pdf" accept="application/pdf" required></div>
+                    <div class="form-group"><label>Student Photo</label><input type="file" name="student_photo" accept="image/*" required></div>
+                    <button type="submit" class="btn btn-success">Generate & Push to Blockchain</button>
+                </form>
+            </div>
+        </div>
+
+        {% elif active_tab == 'records' %}
+        <!-- 3. Registered Students Table -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h3>🎓 Registered Student Accounts</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID / Roll</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Dept</th>
+                        <th>Grad Year</th>
+                        <th>CGPA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    <tr>
+                        <td>{{ s.student_id }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.email }}</td>
+                        <td>{{ s.department }}</td>
+                        <td>{{ s.grad_year }}</td>
+                        <td>{{ s.cgpa }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align:center;">No students registered yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 4. Records Table -->
+        <div class="card">
+            <h3>📜 Registered Blockchain Certificates</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>Dept</th>
+                        <th>Cert Hash</th>
+                        <th>Files</th>
+                        <th>QR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r.student_id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.department }}</td>
+                        <td title="{{ r.cert_hash }}">{{ r.cert_hash[:10] }}...</td>
+                        <td>
+                            <a href="{{ url_for('static', filename='uploads/' + r.cert_pdf) }}" target="_blank">PDF</a> |
+                            <a href="{{ url_for('static', filename='uploads/' + r.student_photo) }}" target="_blank">Photo</a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('static', filename='qrcodes/' + r.qr_code) }}" target="_blank">View QR</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align:center;">No certificates issued yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CertChain Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <h2>🎓 CertChain Portal</h2>
+        <div>
+            <a href="{{ url_for('verify') }}" class="btn">🔍 Verify Certificate</a>
+            <a href="{{ url_for('admin_login') }}" class="btn">🔑 Admin Login</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if not student_logged_in %}
+        <!-- Student Login View -->
+        <div class="grid">
+            <div class="card">
+                <h3>👨‍🎓 Student Portal Login</h3>
+                <form action="{{ url_for('student_login') }}" method="POST">
+                    <div class="form-group">
+                        <label>Student Roll / ID</label>
+                        <input type="text" name="student_id" required placeholder="e.g. ABC2323">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%;">Sign In</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h3>🛡️ Blockchain Certificate Verification</h3>
+                <p style="line-height: 1.6; color: #94a3b8; margin-bottom: 1.5rem;">
+                    Decentralized certificate issuance and verification powered by Ethereum smart contracts. Permanent, tamper-proof, and instantly verifiable by employers.
+                </p>
+                <a href="{{ url_for('verify') }}" class="btn">Open Verification Scanner</a>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Student Dashboard (Logged In) -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items: center;">
+                <h2>Welcome, {{ student.name }}</h2>
+                <a href="{{ url_for('student_logout') }}" class="btn btn-danger">Logout</a>
+            </div>
+            <p style="margin: 1rem 0; color: #94a3b8;">
+                <strong>Roll Number:</strong> <span style="color: #fff;">{{ student.student_id }}</span> &nbsp;|&nbsp; 
+                <strong>Department:</strong> <span style="color: #fff;">{{ student.department }}</span> &nbsp;|&nbsp; 
+                <strong>CGPA:</strong> <span style="color: #fff;">{{ student.cgpa }}</span>
+            </p>
+            
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 1.5rem 0;">
+
+            {% if cert %}
+            <h3>📜 Your Issued Blockchain Certificate</h3>
+            <div style="display: flex; gap: 30px; align-items: center; flex-wrap: wrap; margin-top: 1rem;">
+                <div style="text-align: center;">
+                    <img src="{{ url_for('static', filename='qrcodes/' + cert.qr_code) }}" width="160" alt="QR Code" style="border-radius: 8px; border: 2px solid #334155; padding: 4px; background: #fff;">
+                    <br>
+                    <a href="{{ url_for('static', filename='qrcodes/' + cert.qr_code) }}" download class="btn" style="margin-top: 10px; font-size: 13px; width: 100%;">Download QR</a>
+                </div>
+                <div style="flex: 1;">
+                    <p style="margin-bottom: 8px;"><strong>Blockchain Hash:</strong></p>
+                    <p><code style="color: #38bdf8; word-break: break-all;">{{ cert.cert_hash }}</code></p>
+                    <p style="margin: 12px 0 8px 0;"><strong>Transaction Hash:</strong></p>
+                    <p><code style="color: #38bdf8; word-break: break-all;">{{ cert.tx_hash }}</code></p>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <a href="{{ url_for('static', filename='uploads/' + cert.cert_pdf) }}" target="_blank" class="btn">View Certificate PDF</a>
+                        <a href="{{ url_for('static', filename='uploads/' + cert.student_photo) }}" target="_blank" class="btn">View Photo</a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning" style="margin-top: 1rem;">
+                Your account is registered, but your certificate has not been issued to the blockchain yet. Please contact the college administrator.
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

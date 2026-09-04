@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Certificate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2>🔍 Employer / Verifier Portal</h2>
+        <a href="{{ url_for('index') }}" class="btn">Home</a>
+    </nav>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Option 1: Upload / Manual -->
+            <div class="card">
+                <h3>Option 1: Upload QR / Enter Hash</h3>
+                <form method="POST" enctype="multipart/form-data" id="verifyForm">
+                    <div class="form-group">
+                        <label>Upload QR Code Image</label>
+                        <input type="file" id="qr_file_input" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label>Certificate SHA-256 Hash</label>
+                        <input type="text" name="cert_hash" id="cert_hash_input" placeholder="e.g. 7f83b1657ff1fc53..." required>
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%;">Verify on Blockchain</button>
+                </form>
+            </div>
+
+            <!-- Option 2: Camera Scan -->
+            <div class="card">
+                <h3>Option 2: Live Camera Scan</h3>
+                <div id="reader" style="width: 100%; border-radius: 8px; overflow: hidden;"></div>
+            </div>
+        </div>
+
+        {% if result %}
+        <div class="card" style="border: 2px solid {{ '#10b981' if result.status == 'VALID' else '#ef4444' }}; margin-top: 1.5rem;">
+            {% if result.status == 'VALID' %}
+                <div class="badge-valid">✅ VERIFICATION SUCCESSFUL (GENUINE RECORD)</div>
+                <p style="margin: 6px 0;"><strong>Student Name:</strong> {{ result.name }}</p>
+                <p style="margin: 6px 0;"><strong>Student Roll No:</strong> {{ result.student_id }}</p>
+                <p style="margin: 6px 0;"><strong>Department:</strong> {{ result.department }}</p>
+                <p style="margin: 6px 0;"><strong>Issue Date:</strong> {{ result.issue_date }}</p>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    {% if result.cert_pdf %}
+                        <a href="{{ url_for('static', filename='uploads/' + result.cert_pdf) }}" target="_blank" class="btn">View Certificate PDF</a>
+                    {% endif %}
+                    {% if result.student_photo %}
+                        <a href="{{ url_for('static', filename='uploads/' + result.student_photo) }}" target="_blank" class="btn">View Student Photo</a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="badge-invalid">❌ VERIFICATION FAILED (INVALID / FORGERY)</div>
+                <p style="color: #fca5a5;">{{ result.message }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Hidden element for processing local file uploads -->
+    <div id="qr-file-reader" style="display: none;"></div>
+
+    <script>
+        const html5QrCode = new Html5Qrcode("qr-file-reader");
+        const fileInput = document.getElementById('qr_file_input');
+
+        // Automatically reads uploaded QR file and fills hash field
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length == 0) return;
+            const imageFile = e.target.files[0];
+            html5QrCode.scanFile(imageFile, true)
+                .then(decodedText => {
+                    document.getElementById('cert_hash_input').value = decodedText;
+                    document.getElementById('verifyForm').submit();
+                })
+                .catch(err => {
+                    alert("Could not detect a valid QR code in this image. Please check the file or paste the hash manually.");
+                });
+        });
+
+        // Live camera scan callback
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('cert_hash_input').value = decodedText;
+            html5QrcodeScanner.clear();
+            document.getElementById('verifyForm').submit();
+        }
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
